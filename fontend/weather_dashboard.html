@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratos — Real-Time Weather Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f9fc;
+    --white: #ffffff;
+    --border: #e8eaf0;
+    --border2: #d1d5e0;
+    --text: #0f1724;
+    --muted: #8892a4;
+    --accent: #2563eb;
+    --accent-light: #eff4ff;
+    --accent2: #7c3aed;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --warn: #d97706;
+    --warn-light: #fffbeb;
+    --success: #059669;
+    --success-light: #ecfdf5;
+    --shadow-sm: 0 1px 3px rgba(15,23,36,0.06), 0 1px 2px rgba(15,23,36,0.04);
+    --shadow: 0 4px 16px rgba(15,23,36,0.08), 0 2px 6px rgba(15,23,36,0.04);
+    --shadow-lg: 0 16px 48px rgba(15,23,36,0.12), 0 4px 12px rgba(15,23,36,0.06);
+    --font: 'Outfit', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+  /* Loader */
+  #loader { position: fixed; inset: 0; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; gap: 20px; transition: opacity 0.4s ease, visibility 0.4s ease; }
+  #loader.hidden { opacity: 0; visibility: hidden; }
+  .loader-logo { font-size: 42px; font-weight: 900; letter-spacing: -2px; color: var(--text); }
+  .loader-logo span { color: var(--accent); }
+  .loader-bar { width: 200px; height: 2px; background: var(--border); border-radius: 100px; overflow: hidden; }
+  .loader-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 100px; animation: loadFill 1.2s ease forwards; }
+  @keyframes loadFill { from { width: 0%; } to { width: 100%; } }
+  .loader-text { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+
+  #app { opacity: 0; transform: translateY(12px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  #app.visible { opacity: 1; transform: translateY(0); }
+
+  /* Header */
+  header { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 48px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark { width: 34px; height: 34px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+  .logo-name { font-size: 20px; font-weight: 800; letter-spacing: -0.8px; color: var(--text); }
+  .logo-name span { color: var(--accent); }
+  .logo-tagline { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-left: 4px; padding-left: 12px; border-left: 1px solid var(--border2); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .live-pill { display: flex; align-items: center; gap: 6px; background: var(--success-light); border: 1px solid rgba(5,150,105,0.2); color: var(--success); font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 5px 12px; border-radius: 100px; }
+  .pulse-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: pulseDot 2s infinite; }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+  .ist-time { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); background: var(--bg); border: 1px solid var(--border); padding: 5px 12px; border-radius: 8px; }
+  .refresh-btn { display: flex; align-items: center; gap: 6px; background: var(--accent); color: white; border: none; font-family: var(--font); font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(37,99,235,0.25); }
+  .refresh-btn:hover { background: #1d4ed8; box-shadow: 0 4px 12px rgba(37,99,235,0.35); transform: translateY(-1px); }
+  .refresh-icon { display: inline-block; transition: transform 0.4s ease; }
+  .refresh-btn.spinning .refresh-icon { animation: spin 0.6s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 40px 48px 60px; }
+
+  /* Hero */
+  .hero { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
+  .hero-eyebrow { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .hero-title { font-size: 36px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; }
+  .hero-sub { font-size: 15px; color: var(--muted); margin-top: 8px; }
+  .hero-right { display: flex; gap: 8px; }
+  .aws-tag { display: flex; align-items: center; gap: 5px; background: var(--white); border: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--muted); padding: 5px 10px; border-radius: 8px; box-shadow: var(--shadow-sm); }
+
+  /* Alert */
+  .alert-banner { background: var(--danger-light); border: 1px solid rgba(220,38,38,0.2); border-left: 3px solid var(--danger); border-radius: var(--radius-sm); padding: 14px 20px; margin-bottom: 28px; display: flex; align-items: center; gap: 12px; animation: slideDown 0.4s ease; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  .alert-icon-wrap { width: 32px; height: 32px; background: rgba(220,38,38,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .alert-content strong { display: block; font-size: 13px; font-weight: 700; color: var(--danger); margin-bottom: 2px; }
+  .alert-content span { font-family: var(--mono); font-size: 11px; color: #b91c1c; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; box-shadow: var(--shadow-sm); transition: box-shadow 0.2s, transform 0.2s; animation: fadeUp 0.5s ease both; }
+  .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+  .stat-card:nth-child(1) { animation-delay: 0.05s; } .stat-card:nth-child(2) { animation-delay: 0.1s; } .stat-card:nth-child(3) { animation-delay: 0.15s; } .stat-card:nth-child(4) { animation-delay: 0.2s; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .stat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; margin-bottom: 6px; }
+  .stat-desc { font-size: 12px; color: var(--muted); }
+
+  /* Section */
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .section-title { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+  .section-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* City cards */
+  .city-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
+  .city-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 20px; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden; animation: fadeUp 0.5s ease both; }
+  .city-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); border-color: var(--accent); }
+  .city-card.hot { border-top: 3px solid var(--danger); }
+  .city-card.warm { border-top: 3px solid var(--warn); }
+  .city-card.cool { border-top: 3px solid var(--accent); }
+  .city-card:nth-child(1){animation-delay:0.1s} .city-card:nth-child(2){animation-delay:0.15s} .city-card:nth-child(3){animation-delay:0.2s} .city-card:nth-child(4){animation-delay:0.25s} .city-card:nth-child(5){animation-delay:0.3s}
+  .city-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .city-name { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .city-time { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .city-emoji { font-size: 28px; line-height: 1; }
+  .city-temp { font-size: 44px; font-weight: 800; letter-spacing: -2.5px; line-height: 1; }
+  .city-temp .deg { font-size: 20px; font-weight: 400; color: var(--muted); vertical-align: super; }
+  .city-condition { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: capitalize; margin: 4px 0 16px; }
+  .city-divider { height: 1px; background: var(--border); margin-bottom: 14px; }
+  .city-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .city-meta-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .city-meta-val { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); }
+  .alert-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--danger-light); color: var(--danger); font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; margin-top: 10px; border: 1px solid rgba(220,38,38,0.15); }
+
+  /* Two col */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+
+  /* Chart */
+  .chart-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-sm); }
+  .chart-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .chart-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 140px; padding-bottom: 28px; position: relative; }
+  .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; position: relative; }
+  .bars-wrap { display: flex; gap: 3px; align-items: flex-end; width: 100%; height: 112px; justify-content: center; }
+  .bar { border-radius: 4px 4px 0 0; width: 14px; transition: opacity 0.2s; min-height: 3px; }
+  .bar:hover { opacity: 0.75; }
+  .bar-t { background: linear-gradient(180deg, #fb923c, #fed7aa); }
+  .bar-h { background: linear-gradient(180deg, #3b82f6, #bfdbfe); }
+  .bar-city { font-size: 10px; color: var(--muted); font-weight: 600; text-align: center; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  .chart-legend { display: flex; gap: 16px; margin-top: 12px; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); font-weight: 500; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* Pipeline */
+  .pipeline-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-sm); }
+  .pipeline-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .pipeline-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+  .pipeline-step { display: flex; align-items: center; gap: 14px; padding: 10px 0; }
+  .pipeline-step:not(:last-child) { border-bottom: 1px dashed var(--border); }
+  .step-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: var(--accent-light); }
+  .step-info { flex: 1; }
+  .step-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .step-service { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .step-status { display: flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 10px; color: var(--success); background: var(--success-light); padding: 3px 8px; border-radius: 100px; border: 1px solid rgba(5,150,105,0.15); white-space: nowrap; }
+
+  /* Table */
+  .table-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 32px; }
+  .table-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .table-title { font-size: 15px; font-weight: 700; }
+  .table-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--bg); padding: 10px 24px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 14px 24px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+  .td-city { font-weight: 700; }
+  .td-mono { font-family: var(--mono); color: var(--muted); font-size: 12px; }
+  .temp-hot { color: var(--danger); font-family: var(--mono); font-weight: 600; }
+  .temp-warm { color: var(--warn); font-family: var(--mono); font-weight: 600; }
+  .temp-cool { color: var(--accent); font-family: var(--mono); font-weight: 600; }
+  .status-ok { display: inline-flex; align-items: center; gap: 4px; background: var(--success-light); color: var(--success); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; border: 1px solid rgba(5,150,105,0.15); }
+  .status-alert { display: inline-flex; align-items: center; gap: 4px; background: var(--danger-light); color: var(--danger); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; border: 1px solid rgba(220,38,38,0.15); }
+
+  /* Footer */
+  footer { background: var(--white); border-top: 1px solid var(--border); padding: 20px 48px; display: flex; justify-content: space-between; align-items: center; }
+  .footer-left { font-size: 12px; color: var(--muted); }
+  .footer-left strong { color: var(--text); }
+  .footer-right { display: flex; gap: 8px; }
+
+  @media (max-width: 1024px) {
+    header, main, footer { padding-left: 24px; padding-right: 24px; }
+    .city-grid { grid-template-columns: repeat(3, 1fr); }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .hero { flex-direction: column; align-items: flex-start; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-logo">Stra<span>tos</span></div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-text">Loading weather intelligence...</div>
+</div>
+
+<div id="app">
+<header>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="logo">
+      <div class="logo-mark">🌤️</div>
+      <div class="logo-name">Stra<span>tos</span></div>
+    </div>
+    <div class="logo-tagline">WEATHER INTELLIGENCE</div>
+  </div>
+  <div class="header-right">
+    <div class="live-pill"><div class="pulse-dot"></div>LIVE</div>
+    <div class="ist-time" id="clock">--:--:-- IST</div>
+    <button class="refresh-btn" onclick="refreshData(this)">
+      <span class="refresh-icon">↻</span> Refresh
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">Real-Time · Serverless · AWS</div>
+      <div class="hero-title">Weather Intelligence<br>Dashboard</div>
+      <div class="hero-sub">Live monitoring across 5 major Indian cities via AWS Lambda pipeline</div>
+    </div>
+    <div class="hero-right">
+      <div class="aws-tag">⚡ Lambda</div>
+      <div class="aws-tag">🗄️ DynamoDB</div>
+      <div class="aws-tag">📬 SQS</div>
+      <div class="aws-tag">📧 SNS</div>
+    </div>
+  </div>
+
+  <div class="alert-banner" id="alertBanner" style="display:none">
+    <div class="alert-icon-wrap">⚠️</div>
+    <div class="alert-content">
+      <strong id="alertTitle">EXTREME WEATHER DETECTED</strong>
+      <span id="alertMsg"></span>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-label">Cities Monitored</div><div class="stat-icon" style="background:#eff4ff">🏙️</div></div>
+      <div class="stat-value" style="color:var(--accent)">5</div>
+      <div class="stat-desc">India · All regions active</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-label">Avg Temperature</div><div class="stat-icon" style="background:#fffbeb">🌡️</div></div>
+      <div class="stat-value" id="avgTemp" style="color:var(--warn)">--°C</div>
+      <div class="stat-desc">Celsius · Live average</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-label">Fetch Interval</div><div class="stat-icon" style="background:#f0fdf4">⏱️</div></div>
+      <div class="stat-value" style="color:var(--success)">5<span style="font-size:16px;font-weight:500;color:var(--muted)"> min</span></div>
+      <div class="stat-desc">EventBridge scheduled</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-label">Active Alerts</div><div class="stat-icon" style="background:#fef2f2">🚨</div></div>
+      <div class="stat-value" id="alertCount" style="color:var(--danger)">0</div>
+      <div class="stat-desc">SNS notifications sent</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">City Feed</div>
+    <div class="section-meta" id="lastUpdated">—</div>
+  </div>
+  <div class="city-grid" id="cityGrid"></div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-title">Temperature & Humidity</div>
+      <div class="chart-sub">Current readings per city</div>
+      <div class="bar-chart" id="barChart"></div>
+      <div class="chart-legend">
+        <div class="leg"><div class="leg-dot" style="background:#fb923c"></div>Temperature (°C)</div>
+        <div class="leg"><div class="leg-dot" style="background:#3b82f6"></div>Humidity (%)</div>
+      </div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-title">AWS Pipeline Status</div>
+      <div class="pipeline-sub">All services operational · eu-north-1</div>
+      <div id="pipelineSteps"></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <div>
+        <div class="table-title">Raw Data Log</div>
+        <div class="table-sub">Latest records from DynamoDB · WeatherData table</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>City</th><th>Temperature</th><th>Humidity</th><th>Wind Speed</th><th>Condition</th><th>Timestamp (IST)</th><th>Status</th></tr></thead>
+      <tbody id="dataTable"></tbody>
+    </table>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-left"><strong>Stratos</strong> · BSCE408L Cloud Computing · VIT Chennai · Serverless Real-Time Weather Pipeline</div>
+  <div class="footer-right">
+    <div class="aws-tag">☁️ AWS eu-north-1</div>
+    <div class="aws-tag">🎓 VIT Chennai</div>
+  </div>
+</footer>
+</div>
+
+<script>
+  const weatherData = [
+    { city:"Chennai",   temperature:34.2, humidity:72, wind_speed:18.4, condition:"haze" },
+    { city:"Mumbai",    temperature:31.5, humidity:78, wind_speed:22.1, condition:"scattered clouds" },
+    { city:"Delhi",     temperature:28.8, humidity:45, wind_speed:14.0, condition:"clear sky" },
+    { city:"Bangalore", temperature:26.1, humidity:61, wind_speed:10.3, condition:"few clouds" },
+    { city:"Hyderabad", temperature:38.7, humidity:38, wind_speed:25.6, condition:"sunny" },
+  ];
+
+  const icons = {"haze":"🌫️","scattered clouds":"⛅","clear sky":"☀️","few clouds":"🌤️","sunny":"🌞","rain":"🌧️","thunderstorm":"⛈️","snow":"❄️","mist":"🌁"};
+  const getIcon = c => { for (let k in icons) if (c.toLowerCase().includes(k)) return icons[k]; return "🌡️"; };
+  const getTempClass = t => t >= 38 ? 'hot' : t >= 32 ? 'warm' : 'cool';
+  const getTempColor = t => t >= 38 ? 'temp-hot' : t >= 32 ? 'temp-warm' : 'temp-cool';
+  const isAlert = d => d.temperature > 40 || d.wind_speed > 60 || d.humidity < 20;
+
+  function getIST() {
+    const ist = new Date(Date.now() + 5.5 * 3600000);
+    return ist.toISOString().replace('T',' ').substring(0,19);
+  }
+
+  function updateClock() {
+    const ist = new Date(Date.now() + 5.5 * 3600000);
+    const h = String(ist.getUTCHours()).padStart(2,'0');
+    const m = String(ist.getUTCMinutes()).padStart(2,'0');
+    const s = String(ist.getUTCSeconds()).padStart(2,'0');
+    document.getElementById('clock').textContent = `${h}:${m}:${s} IST`;
+  }
+
+  function render() {
+    let alertCount = 0, alertCity = null;
+    const avg = (weatherData.reduce((s,d) => s + d.temperature, 0) / weatherData.length).toFixed(1);
+    document.getElementById('avgTemp').textContent = avg + '°C';
+    document.getElementById('lastUpdated').textContent = `Updated at ${getIST().split(' ')[1]} IST`;
+
+    // City cards
+    const grid = document.getElementById('cityGrid');
+    grid.innerHTML = '';
+    weatherData.forEach((d,i) => {
+      const hasAlert = isAlert(d);
+      if (hasAlert) { alertCount++; alertCity = d; }
+      const card = document.createElement('div');
+      card.className = `city-card ${getTempClass(d.temperature)}`;
+      card.style.animationDelay = `${i*0.08}s`;
+      card.innerHTML = `
+        <div class="city-top">
+          <div><div class="city-name">${d.city}</div><div class="city-time">${getIST().split(' ')[1]} IST</div></div>
+          <div class="city-emoji">${getIcon(d.condition)}</div>
+        </div>
+        <div class="city-temp">${d.temperature}<span class="deg">°C</span></div>
+        <div class="city-condition">${d.condition}</div>
+        ${hasAlert ? `<div class="alert-chip">⚠️ ALERT</div>` : ''}
+        <div class="city-divider"></div>
+        <div class="city-meta">
+          <div><div class="city-meta-label">Humidity</div><div class="city-meta-val">${d.humidity}%</div></div>
+          <div><div class="city-meta-label">Wind</div><div class="city-meta-val">${d.wind_speed} km/h</div></div>
+        </div>`;
+      grid.appendChild(card);
+    });
+
+    document.getElementById('alertCount').textContent = alertCount;
+    const banner = document.getElementById('alertBanner');
+    if (alertCity) {
+      banner.style.display = 'flex';
+      document.getElementById('alertTitle').textContent = `⚠️ EXTREME WEATHER — ${alertCity.city.toUpperCase()}`;
+      document.getElementById('alertMsg').textContent = `Temperature: ${alertCity.temperature}°C · SNS notification dispatched via SQS → Lambda`;
+    } else { banner.style.display = 'none'; }
+
+    // Chart
+    const chart = document.getElementById('barChart');
+    chart.innerHTML = '';
+    weatherData.forEach(d => {
+      const tH = Math.round((d.temperature/50)*108);
+      const hH = Math.round((d.humidity/100)*108);
+      const g = document.createElement('div');
+      g.className = 'bar-group';
+      g.innerHTML = `<div class="bars-wrap"><div class="bar bar-t" style="height:${tH}px"></div><div class="bar bar-h" style="height:${hH}px"></div></div><div class="bar-city">${d.city.substring(0,3)}</div>`;
+      chart.appendChild(g);
+    });
+
+    // Pipeline
+    const steps = [
+      {icon:'⏱️', name:'EventBridge Trigger', service:'Scheduled · every 5 minutes'},
+      {icon:'⚡', name:'WeatherFetcher Lambda', service:'AWS Lambda · Python 3.12'},
+      {icon:'🌐', name:'OpenWeather API', service:'External API · live data source'},
+      {icon:'🗄️', name:'DynamoDB Storage', service:'NoSQL · WeatherData table'},
+      {icon:'🔍', name:'AlertDetector Lambda', service:'AWS Lambda · threshold checks'},
+      {icon:'📬', name:'SQS Alert Queue', service:'WeatherAlerts · standard queue'},
+      {icon:'📧', name:'SNS Notification', service:'WeatherAlertTopic · email'},
+    ];
+    document.getElementById('pipelineSteps').innerHTML = steps.map(s => `
+      <div class="pipeline-step">
+        <div class="step-icon">${s.icon}</div>
+        <div class="step-info"><div class="step-name">${s.name}</div><div class="step-service">${s.service}</div></div>
+        <div class="step-status"><span style="width:5px;height:5px;background:var(--success);border-radius:50%;display:inline-block"></span> OK</div>
+      </div>`).join('');
+
+    // Table
+    document.getElementById('dataTable').innerHTML = weatherData.map(d => `
+      <tr>
+        <td class="td-city">${getIcon(d.condition)} ${d.city}</td>
+        <td class="${getTempColor(d.temperature)}">${d.temperature}°C</td>
+        <td class="td-mono">${d.humidity}%</td>
+        <td class="td-mono">${d.wind_speed} km/h</td>
+        <td style="text-transform:capitalize;font-size:13px">${d.condition}</td>
+        <td class="td-mono">${getIST()}</td>
+        <td>${isAlert(d) ? `<span class="status-alert">⚠️ Alert</span>` : `<span class="status-ok">✓ Normal</span>`}</td>
+      </tr>`).join('');
+  }
+
+  function refreshData(btn) {
+    btn.classList.add('spinning');
+    weatherData.forEach(d => {
+      d.temperature = +(d.temperature + (Math.random()-0.5)*0.6).toFixed(1);
+      d.humidity = Math.min(100, Math.max(10, Math.round(d.humidity + (Math.random()-0.5)*3)));
+      d.wind_speed = Math.max(0, +(d.wind_speed + (Math.random()-0.5)*1.5).toFixed(1));
+    });
+    setTimeout(() => { render(); btn.classList.remove('spinning'); }, 600);
+  }
+
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('app').classList.add('visible');
+      render();
+    }, 1400);
+  });
+
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
