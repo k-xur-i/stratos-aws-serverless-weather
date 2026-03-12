@@ -2,7 +2,7 @@
 
 A fully serverless, event-driven real-time weather monitoring and alerting system built on Amazon Web Services. Stratos automatically fetches live weather data for 5 major Indian cities every 5 minutes, detects extreme weather conditions, and sends automated email alerts — all without any manually managed servers.
 
-🔗 **Live Dashboard:** [https://d23u0n35xg7mik.cloudfront.net/weather_dashboard.html](https://d23u0n35xg7mik.cloudfront.net/weather_dashboard.html)
+🔗 **Live Dashboard:** [https://d23u0n35xg7mik.cloudfront.net/](https://d23u0n35xg7mik.cloudfront.net/)
 
 ---
 
