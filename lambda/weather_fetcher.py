@@ -4,7 +4,7 @@ import urllib.request
 from datetime import datetime
 
 
-API_KEY = "c1a738dabe1af803548633e68ce4fb58"
+API_KEY = "api"
 CITIES = ["Chennai", "Mumbai", "Delhi", "Bangalore", "Hyderabad"]
 TABLE_NAME = "WeatherData"
 
