@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>STRATOS | MISSION CONTROL</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Roboto+Mono&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "surface": "#10141a",
+          "surface-container-low": "#181c22",
+          "primary": "#c3f5ff",
+          "surface-container": "#1c2026",
+          "outline-variant": "#3b494c",
+          "on-secondary": "#432c00",
+          "surface-dim": "#10141a",
+          "on-background": "#dfe2eb",
+          "surface-container-high": "#262a31",
+          "secondary": "#ffd799",
+          "on-surface": "#dfe2eb",
+          "background": "#10141a",
+          "surface-container-lowest": "#0a0e14",
+          "surface-variant": "#31353c",
+          "tertiary-container": "#49ed72",
+          "error-container": "#93000a",
+          "primary-container": "#00e5ff",
+          "on-surface-variant": "#bac9cc",
+          "on-primary": "#00363d",
+          "surface-container-highest": "#31353c",
+          "error": "#ffb4ab",
+          "tertiary": "#b1ffb5",
+          "outline": "#849396",
+          "on-error": "#690005",
+          "secondary-container": "#feb300",
+          "tertiary-fixed-dim": "#3ce36a",
+          "surface-bright": "#353940",
+        },
+        fontFamily: {
+          "headline": ["Space Grotesk"],
+          "body": ["Inter"],
+          "mono": ["Roboto Mono"]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  body { font-family: 'Inter', sans-serif; background-color: #10141a; }
+  .glass-panel { background: rgba(28, 32, 38, 0.7); backdrop-filter: blur(12px); }
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #10141a; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b494c; border-radius: 2px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(400%); } }
+</style>
+</head>
+<body class="bg-background text-on-background antialiased">
+
+<!-- TOP NAV -->
+<header class="fixed top-0 w-full z-50 bg-[#10141a] border-b border-[#3b494c]/15 shadow-[0_0_20px_rgba(0,229,255,0.05)] flex justify-between items-center px-6 h-16">
+  <div class="flex items-center gap-8">
+    <span class="text-2xl font-bold tracking-tighter text-[#00e5ff] font-headline">STRATOS</span>
+    <div class="hidden md:flex items-center gap-6">
+      <span onclick="switchPage('dashboard')" id="nav-dashboard" class="font-headline uppercase tracking-widest text-xs text-[#00e5ff] font-bold cursor-pointer px-2 py-1">Dashboard</span>
+      <span onclick="switchPage('datalogs')" id="nav-datalogs" class="font-headline uppercase tracking-widest text-xs text-slate-400 hover:text-[#c3f5ff] transition-colors px-2 py-1 cursor-pointer">Data Logs</span>
+    </div>
+  </div>
+  <div class="flex items-center gap-6">
+    <div class="flex flex-col items-end">
+      <span class="font-mono text-xs text-primary/70 tracking-widest uppercase">IST LIVE CLOCK</span>
+      <span class="font-mono text-sm font-bold text-primary" id="clock">--:--:--</span>
+    </div>
+    <div class="h-8 w-px bg-outline-variant/20"></div>
+    <div class="flex items-center gap-4">
+      <span onclick="fetchData()" class="material-symbols-outlined text-slate-400 hover:text-primary transition-colors cursor-pointer">refresh</span>
+      <div class="flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded-md">
+        <span class="material-symbols-outlined text-[14px] text-tertiary-fixed-dim" style="font-variation-settings: 'FILL' 1;">circle</span>
+        <span class="font-headline text-[10px] tracking-widest text-on-surface-variant font-medium">LIVE SYNC</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-[#1c2026] flex flex-col py-8 gap-2 border-r border-[#3b494c]/15 z-40">
+  <div class="px-6 mb-8">
+    <h2 class="font-headline text-xs font-bold tracking-[0.2em] text-[#00e5ff]">MISSION CONTROL</h2>
+    <p class="font-headline text-[10px] text-slate-500 uppercase tracking-widest">OPERATOR 01</p>
+  </div>
+  <nav class="flex-1 space-y-1">
+    <div onclick="switchPage('dashboard')" id="sidenav-dashboard" class="bg-gradient-to-r from-[#00e5ff]/10 to-transparent border-l-2 border-[#00e5ff] text-[#00e5ff] px-4 py-3 flex items-center gap-3 cursor-pointer transition-all">
+      <span class="material-symbols-outlined text-xl">dashboard</span>
+      <span class="font-headline text-sm tracking-tight font-medium">Dashboard</span>
+    </div>
+    <div onclick="switchPage('datalogs')" id="sidenav-datalogs" class="text-slate-500 px-4 py-3 hover:text-slate-300 hover:bg-[#31353c] transition-all flex items-center gap-3 cursor-pointer">
+      <span class="material-symbols-outlined text-xl">database</span>
+      <span class="font-headline text-sm tracking-tight">Data Logs</span>
+    </div>
+  </nav>
+  <div class="px-4 mt-auto space-y-4">
+    <div class="bg-surface-container-highest p-4 rounded-lg">
+      <p class="text-[10px] text-primary/60 font-mono mb-1 uppercase tracking-tighter">System Health</p>
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#b1ffb5]"></div>
+        <span class="text-xs font-bold text-on-surface">NOMINAL</span>
+      </div>
+    </div>
+    <div class="text-[10px] font-mono text-slate-500 text-center pb-2">VIT VELLORE · BSCE408L</div>
+  </div>
+</aside>
+
+<!-- RIGHT SIDEBAR (dashboard only) -->
+<aside id="right-sidebar" class="fixed right-0 top-16 w-[300px] h-[calc(100vh-64px)] bg-[#10141a] border-l border-[#3b494c]/15 p-6 flex flex-col gap-6 z-40 overflow-y-auto custom-scrollbar">
+  <section>
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-1 h-3 bg-error"></div>
+      <h3 class="text-xs font-headline font-bold tracking-widest text-on-surface uppercase">Critical Matrix</h3>
+    </div>
+    <div id="critical-matrix" class="space-y-3">
+      <div class="text-[10px] font-mono text-slate-500 text-center py-4">Loading alerts...</div>
+    </div>
+  </section>
+  <section class="mt-auto">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-1 h-3 bg-primary"></div>
+      <h3 class="text-xs font-headline font-bold tracking-widest text-on-surface uppercase">Infrastructural Ops</h3>
+    </div>
+    <div class="bg-surface-container-low rounded-lg p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] font-headline text-slate-500 uppercase tracking-widest">AWS Pipeline</span>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-mono text-tertiary">STABLE</span>
+          <div class="w-2 h-2 rounded-full bg-tertiary"></div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] font-headline text-slate-500 uppercase tracking-widest">API Gateway</span>
+        <span class="text-xs font-mono font-bold text-on-surface" id="api-status">CHECKING...</span>
+      </div>
+      <div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+        <div class="bg-primary h-full w-full shadow-[0_0_8px_rgba(0,229,255,0.5)]"></div>
+      </div>
+      <div class="pt-2 flex flex-col gap-2 border-t border-outline-variant/10">
+        <div class="flex justify-between items-center">
+          <span class="text-[10px] font-headline text-slate-500 uppercase tracking-widest">Cities Online</span>
+          <span class="text-xs font-mono font-bold text-primary" id="cities-online">--/12</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-[10px] font-headline text-slate-500 uppercase tracking-widest">Active Database</span>
+          <span class="text-[10px] font-mono font-bold text-on-surface">DYNAMODB_PROD</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</aside>
+
+<!-- ===== DASHBOARD PAGE ===== -->
+<main id="page-dashboard" class="page active ml-64 mt-16 p-8 min-h-screen bg-surface custom-scrollbar overflow-y-auto mr-[300px]">
+
+  <!-- Loading -->
+  <div id="dash-loading" class="flex flex-col items-center justify-center py-24">
+    <div class="w-10 h-10 border-2 border-[#3b494c] border-t-[#00e5ff] rounded-full animate-spin mb-4"></div>
+    <p class="text-[11px] font-mono text-slate-500 tracking-widest">FETCHING LIVE TELEMETRY...</p>
+  </div>
+
+  <!-- Content -->
+  <div id="dash-content" class="hidden">
+    <!-- Stats -->
+    <div class="grid grid-cols-4 gap-6 mb-8">
+      <div class="bg-surface-container-low p-6 flex flex-col justify-between h-32 border-l border-primary/20">
+        <span class="text-[10px] font-headline font-bold text-slate-500 tracking-[0.2em] uppercase">Avg Temp</span>
+        <div class="flex items-baseline gap-2">
+          <span class="text-4xl font-headline font-bold text-on-surface" id="stat-avg">--</span>
+          <span class="text-xl text-primary font-light">°C</span>
+        </div>
+        <div class="w-full bg-surface-container-highest h-1 mt-2">
+          <div class="bg-primary h-full" id="stat-avg-bar" style="width:50%"></div>
+        </div>
+      </div>
+      <div class="bg-surface-container-low p-6 flex flex-col justify-between h-32 border-l border-secondary/20">
+        <span class="text-[10px] font-headline font-bold text-slate-500 tracking-[0.2em] uppercase">Max Temp</span>
+        <div class="flex items-baseline gap-2">
+          <span class="text-4xl font-headline font-bold text-on-surface" id="stat-max">--</span>
+          <span class="text-xl text-secondary font-light">°C</span>
+        </div>
+        <span class="text-[9px] text-secondary font-mono" id="stat-max-city">--</span>
+      </div>
+      <div class="bg-surface-container-low p-6 flex flex-col justify-between h-32 border-l border-primary/20">
+        <span class="text-[10px] font-headline font-bold text-slate-500 tracking-[0.2em] uppercase">Cities</span>
+        <div class="flex items-baseline gap-2">
+          <span class="text-4xl font-headline font-bold text-on-surface" id="stat-cities">--</span>
+          <span class="text-sm text-slate-500 uppercase tracking-widest font-mono">Nodes</span>
+        </div>
+        <span class="text-[9px] text-primary font-mono">INDIA COVERAGE</span>
+      </div>
+      <div class="bg-surface-container-low p-6 flex flex-col justify-between h-32 border-l border-error/20 relative overflow-hidden group">
+        <div class="absolute inset-0 bg-error/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        <span class="text-[10px] font-headline font-bold text-slate-500 tracking-[0.2em] uppercase">Active Alerts</span>
+        <div class="flex items-baseline gap-2">
+          <span class="text-4xl font-headline font-bold text-error" id="stat-alerts">--</span>
+        </div>
+        <div class="flex items-center gap-2 text-error" id="alert-status-row">
+          <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">warning</span>
+          <span class="text-[9px] font-bold tracking-tighter uppercase" id="alert-status-text">CHECKING</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- City Grid -->
+    <h3 class="text-xs font-headline font-bold text-primary tracking-[0.3em] mb-6 uppercase">Regional Telemetry Grid</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="cities-grid"></div>
+  </div>
+</main>
+
+<!-- ===== DATA LOGS PAGE ===== -->
+<main id="page-datalogs" class="page ml-64 mt-16 p-8 min-h-screen bg-surface mr-0">
+  <div class="grid grid-cols-12 gap-6">
+    <div class="col-span-12 lg:col-span-9">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-8 h-px bg-primary/50"></div>
+        <span class="text-[10px] font-mono text-slate-500 tracking-widest uppercase">System Stream</span>
+      </div>
+      <h2 class="text-2xl font-headline font-bold text-on-surface mb-6">Raw Telemetry Explorer</h2>
+
+      <!-- Table Header -->
+      <div class="bg-surface-container rounded-xl border border-outline-variant/10 overflow-hidden">
+        <div class="px-6 py-4 bg-surface-container-high/30 border-b border-outline-variant/15 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] font-mono text-primary font-bold">[]</span>
+            <span class="text-[11px] font-mono text-on-surface-variant tracking-widest">INGESTION_LOG_STREAM_V4</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] font-mono text-slate-500" id="log-count">SHOWING -- LOGS</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-outline-variant/10">
+                <th class="px-6 py-3 text-left text-[10px] font-mono text-slate-500 uppercase tracking-widest">Timestamp</th>
+                <th class="px-6 py-3 text-left text-[10px] font-mono text-slate-500 uppercase tracking-widest">Node Identity</th>
+                <th class="px-6 py-3 text-center text-[10px] font-mono text-slate-500 uppercase tracking-widest">Temp (°C)</th>
+                <th class="px-6 py-3 text-center text-[10px] font-mono text-slate-500 uppercase tracking-widest">Hum (%)</th>
+                <th class="px-6 py-3 text-center text-[10px] font-mono text-slate-500 uppercase tracking-widest">Wind (km/h)</th>
+                <th class="px-6 py-3 text-left text-[10px] font-mono text-slate-500 uppercase tracking-widest">Condition</th>
+              </tr>
+            </thead>
+            <tbody id="log-table" class="divide-y divide-outline-variant/5">
+              <tr><td colspan="6" class="px-6 py-8 text-center text-[10px] font-mono text-slate-500">LOADING TELEMETRY DATA...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="col-span-12 lg:col-span-3 space-y-6">
+      <div class="bg-surface-container rounded-xl overflow-hidden border border-outline-variant/10">
+        <div class="p-4 bg-surface-container-high/30 border-b border-outline-variant/15 flex justify-between items-center">
+          <span class="font-headline text-[10px] tracking-widest font-bold">SPATIAL CONTEXT</span>
+          <span class="text-[10px] font-mono text-tertiary">REGION: IN_S_01</span>
+        </div>
+        <div class="p-4 grid grid-cols-2 gap-2">
+          <div class="bg-surface-container-high rounded p-2 border border-outline-variant/5">
+            <span class="block text-[8px] text-slate-500 font-mono">NODES ONLINE</span>
+            <span class="text-xs font-mono" id="log-nodes-online">-- / 12</span>
+          </div>
+          <div class="bg-surface-container-high rounded p-2 border border-outline-variant/5">
+            <span class="block text-[8px] text-slate-500 font-mono">REFRESH RATE</span>
+            <span class="text-xs font-mono">5 MIN</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-surface-container rounded-xl p-5 border border-outline-variant/10 space-y-4">
+        <h4 class="font-headline text-[10px] tracking-widest font-bold text-slate-400">PIPELINE INTEGRITY</h4>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-tertiary/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-tertiary text-lg">database</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold">DynamoDB</span>
+                <span class="text-[9px] text-slate-500 font-mono">WEATHER_DATA_TABLE</span>
+              </div>
+            </div>
+            <span class="text-xs font-mono text-tertiary">NOMINAL</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-secondary text-lg">electric_bolt</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold">Lambda Trigger</span>
+                <span class="text-[9px] text-slate-500 font-mono">WEATHER_FETCHER</span>
+              </div>
+            </div>
+            <span class="text-xs font-mono text-secondary">5 MIN</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary text-lg">api</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold">API Gateway</span>
+                <span class="text-[9px] text-slate-500 font-mono">STRATOS_API /weather</span>
+              </div>
+            </div>
+            <span class="text-xs font-mono text-primary">ACTIVE</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-panel rounded-xl p-5 border border-primary/20">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_#00e5ff]"></span>
+          <span class="text-[11px] font-headline font-bold text-primary">OPERATOR OVERRIDE</span>
+        </div>
+        <div class="space-y-3">
+          <button onclick="downloadJSON()" class="w-full py-2 bg-surface-container-highest border border-outline-variant/10 rounded flex items-center justify-center gap-2 hover:bg-surface-bright transition-colors">
+            <span class="material-symbols-outlined text-sm">download</span>
+            <span class="text-[10px] font-headline font-bold tracking-widest">DOWNLOAD JSON</span>
+          </button>
+          <button onclick="downloadCSV()" class="w-full py-2 bg-surface-container-highest border border-outline-variant/10 rounded flex items-center justify-center gap-2 hover:bg-surface-bright transition-colors">
+            <span class="material-symbols-outlined text-sm">table_chart</span>
+            <span class="text-[10px] font-headline font-bold tracking-widest">EXPORT CSV</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Bottom sweep line -->
+<div class="fixed bottom-0 left-64 right-0 h-1 z-40 bg-surface-container overflow-hidden">
+  <div class="h-full w-1/4 bg-primary/40 blur-sm" style="animation: sweep 4s infinite linear; transform: translateX(-100%);"></div>
+</div>
+
+<script>
+const API_URL = 'https://61lqb5et10.execute-api.eu-north-1.amazonaws.com/prod/weather';
+let weatherData = [];
+
+// CLOCK
+function updateClock() {
+  const now = new Date();
+  const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+  const h = String(ist.getUTCHours()).padStart(2, '0');
+  const m = String(ist.getUTCMinutes()).padStart(2, '0');
+  const s = String(ist.getUTCSeconds()).padStart(2, '0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// PAGE SWITCHING
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+
+  // Nav highlights
+  ['dashboard', 'datalogs'].forEach(p => {
+    const nav = document.getElementById('nav-' + p);
+    const side = document.getElementById('sidenav-' + p);
+    if (p === page) {
+      nav.className = 'font-headline uppercase tracking-widest text-xs text-[#00e5ff] font-bold cursor-pointer px-2 py-1';
+      side.className = 'bg-gradient-to-r from-[#00e5ff]/10 to-transparent border-l-2 border-[#00e5ff] text-[#00e5ff] px-4 py-3 flex items-center gap-3 cursor-pointer transition-all';
+    } else {
+      nav.className = 'font-headline uppercase tracking-widest text-xs text-slate-400 hover:text-[#c3f5ff] transition-colors px-2 py-1 cursor-pointer';
+      side.className = 'text-slate-500 px-4 py-3 hover:text-slate-300 hover:bg-[#31353c] transition-all flex items-center gap-3 cursor-pointer';
+    }
+  });
+
+  // Right sidebar only on dashboard
+  document.getElementById('right-sidebar').style.display = page === 'dashboard' ? 'flex' : 'none';
+  document.getElementById('page-dashboard').style.marginRight = page === 'dashboard' ? '300px' : '0';
+
+  if (page === 'datalogs') renderLogs();
+}
+
+// IST CONVERSION
+function toIST(timestamp) {
+  if (!timestamp) return '--';
+  const d = new Date(timestamp.replace(' ', 'T') + 'Z');
+  const ist = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
+  return ist.toISOString().slice(11, 16) + ' IST';
+}
+
+// WEATHER ICON
+function getIcon(condition) {
+  const c = (condition || '').toLowerCase();
+  if (c.includes('rain') || c.includes('drizzle')) return 'rainy';
+  if (c.includes('thunder') || c.includes('storm')) return 'thunderstorm';
+  if (c.includes('snow')) return 'ac_unit';
+  if (c.includes('fog') || c.includes('mist') || c.includes('haze')) return 'foggy';
+  if (c.includes('clear') || c.includes('sunny')) return 'wb_sunny';
+  if (c.includes('few clouds') || c.includes('partly')) return 'partly_cloudy_day';
+  if (c.includes('cloud') || c.includes('overcast')) return 'cloud';
+  return 'thermostat';
+}
+
+function getTempColor(temp) {
+  if (temp > 40) return 'text-error';
+  if (temp > 35) return 'text-secondary';
+  if (temp > 28) return 'text-on-surface';
+  return 'text-primary';
+}
+
+function getBorderColor(temp) {
+  if (temp > 40) return 'border-b-2 border-error';
+  if (temp > 35) return 'border-b-2 border-secondary/60';
+  return 'border-b border-transparent hover:border-primary/30';
+}
+
+// FETCH DATA
+async function fetchData() {
+  try {
+    const res = await fetch(API_URL);
+    const raw = await res.json();
+    weatherData = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw;
+    renderDashboard();
+    renderLogs();
+    document.getElementById('api-status').textContent = 'ONLINE';
+    document.getElementById('api-status').className = 'text-xs font-mono font-bold text-tertiary';
+  } catch (err) {
+    console.error(err);
+    document.getElementById('api-status').textContent = 'ERROR';
+    document.getElementById('api-status').className = 'text-xs font-mono font-bold text-error';
+  }
+}
+
+// RENDER DASHBOARD
+function renderDashboard() {
+  if (!weatherData.length) return;
+  document.getElementById('dash-loading').classList.add('hidden');
+  document.getElementById('dash-content').classList.remove('hidden');
+
+  const temps = weatherData.map(c => parseFloat(c.temperature));
+  const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
+  const max = Math.max(...temps);
+  const maxCity = weatherData.find(c => parseFloat(c.temperature) === max);
+
+  // Check alerts
+  const alerts = [];
+  weatherData.forEach(city => {
+    const temp = parseFloat(city.temperature);
+    const wind = parseFloat(city.wind_speed);
+    const humidity = parseFloat(city.humidity);
+    if (temp > 40) alerts.push({ city: city.city, type: 'TEMP_THRESHOLD_EXCEEDED', label: 'error', msg: `Ambient temperature exceeds critical threshold. Heat advisory in effect.`, val: `${temp.toFixed(1)}°C` });
+    if (wind > 60) alerts.push({ city: city.city, type: 'WIND_SPEED_CRITICAL', label: 'secondary', msg: `Wind speed exceeds safety threshold. Storm advisory issued.`, val: `${wind.toFixed(1)} km/h` });
+    if (humidity < 20) alerts.push({ city: city.city, type: 'HUMIDITY_LOW_CRITICAL', label: 'secondary', msg: `Dry air conditions detected. Fire risk index elevated.`, val: `${humidity.toFixed(0)}%` });
+  });
+
+  document.getElementById('stat-avg').textContent = avg.toFixed(1);
+  document.getElementById('stat-max').textContent = max.toFixed(1);
+  document.getElementById('stat-max-city').textContent = maxCity ? maxCity.city.toUpperCase() + ' NODE' : '--';
+  document.getElementById('stat-cities').textContent = weatherData.length;
+  document.getElementById('stat-alerts').textContent = String(alerts.length).padStart(2, '0');
+  document.getElementById('cities-online').textContent = `${weatherData.length}/12`;
+  document.getElementById('log-nodes-online').textContent = `${weatherData.length} / 12`;
+  document.getElementById('log-count').textContent = `SHOWING ${weatherData.length} LOGS`;
+
+  if (alerts.length > 0) {
+    document.getElementById('alert-status-text').textContent = 'HIGH CRITICALITY';
+  } else {
+    document.getElementById('alert-status-row').className = 'flex items-center gap-2 text-tertiary';
+    document.getElementById('alert-status-text').textContent = 'ALL CLEAR';
+  }
+
+  // Critical matrix
+  const matrixEl = document.getElementById('critical-matrix');
+  if (alerts.length === 0) {
+    matrixEl.innerHTML = `<div class="bg-surface-container p-4 border-l-2 border-tertiary">
+      <span class="text-[10px] font-mono text-tertiary font-bold">ALL_SYSTEMS_NOMINAL</span>
+      <p class="text-sm font-headline font-bold text-on-surface mt-1">No Active Alerts</p>
+      <p class="text-[10px] text-slate-400 mt-1">All monitored nodes reporting within safe parameters.</p>
+    </div>`;
+  } else {
+    matrixEl.innerHTML = alerts.slice(0, 3).map(a => {
+      const borderColor = a.label === 'error' ? 'border-error' : 'border-secondary';
+      const textColor = a.label === 'error' ? 'text-error' : 'text-secondary';
+      return `<div class="bg-surface-container p-4 border-l-2 ${borderColor}">
+        <div class="flex justify-between items-start mb-2">
+          <span class="text-[10px] font-mono ${textColor} font-bold">${a.type}</span>
+          <span class="text-[9px] font-mono text-slate-500">${new Date().toTimeString().slice(0,5)}</span>
+        </div>
+        <p class="text-sm font-headline font-bold text-on-surface mb-1 uppercase">${a.city} NODE: ${a.val}</p>
+        <p class="text-[10px] text-slate-400 leading-relaxed">${a.msg}</p>
+      </div>`;
+    }).join('');
+  }
+
+  // City cards
+  document.getElementById('cities-grid').innerHTML = weatherData.map(city => {
+    const temp = parseFloat(city.temperature);
+    const tempColor = getTempColor(temp);
+    const borderColor = getBorderColor(temp);
+    const icon = getIcon(city.condition);
+    const isAlert = temp > 40;
+    return `
+    <div class="bg-surface-container p-5 rounded-md hover:bg-surface-container-high transition-all group ${borderColor}">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h4 class="font-headline font-bold text-lg ${isAlert ? 'text-error' : 'text-on-surface group-hover:text-primary'} tracking-tight transition-colors">${city.city.toUpperCase()}</h4>
+          <p class="text-[9px] text-slate-500 font-mono">${city.timestamp ? city.timestamp.slice(0,10) + ' ' + toIST(city.timestamp) : '--'}</p>
+        </div>
+        <span class="material-symbols-outlined ${isAlert ? 'text-secondary' : 'text-primary'} text-3xl">${icon}</span>
+      </div>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-baseline gap-1">
+          <span class="text-3xl font-headline font-medium ${tempColor}">${temp.toFixed(1)}</span>
+          <span class="text-sm text-slate-500">°C</span>
+        </div>
+        <div class="flex flex-col items-end">
+          <span class="text-[9px] font-mono ${isAlert ? 'text-error font-bold' : 'text-slate-400'}">${isAlert ? 'HEATWAVE ALERT' : (city.condition || 'CLEAR').toUpperCase()}</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2 border-t border-outline-variant/10 pt-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-xs text-primary">humidity_low</span>
+          <span class="text-[10px] ${parseFloat(city.humidity) < 20 ? 'text-error font-bold' : 'text-slate-300'} font-mono">${parseFloat(city.humidity).toFixed(0)}% HUM</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-xs text-primary">air</span>
+          <span class="text-[10px] text-slate-300 font-mono">${parseFloat(city.wind_speed).toFixed(1)} KM/H</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// RENDER LOGS
+function renderLogs() {
+  if (!weatherData.length) return;
+  document.getElementById('log-count').textContent = `SHOWING ${weatherData.length} LOGS`;
+  document.getElementById('log-nodes-online').textContent = `${weatherData.length} / 12`;
+  document.getElementById('log-table').innerHTML = weatherData.map(city => {
+    const temp = parseFloat(city.temperature);
+    const tempColor = temp > 40 ? 'text-error font-bold' : temp > 35 ? 'text-secondary' : 'text-tertiary';
+    return `<tr class="hover:bg-primary/5 transition-colors group">
+      <td class="px-6 py-4 text-slate-400 font-mono text-xs">${city.timestamp ? city.timestamp.slice(0,10) + ' ' + toIST(city.timestamp) : '--'}</td>
+      <td class="px-6 py-4 font-headline font-bold text-on-surface">${city.city.toUpperCase()}_NODE</td>
+      <td class="px-6 py-4 text-center ${tempColor} font-mono">${temp.toFixed(1)}</td>
+      <td class="px-6 py-4 text-center font-mono">${parseFloat(city.humidity).toFixed(0)}</td>
+      <td class="px-6 py-4 text-center font-mono">${parseFloat(city.wind_speed).toFixed(1)}</td>
+      <td class="px-6 py-4">
+        <span class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[14px] text-primary">${getIcon(city.condition)}</span>
+          <span class="font-mono text-xs">${(city.condition || 'UNKNOWN').toUpperCase().replace(/ /g,'_')}</span>
+        </span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// DOWNLOAD
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(weatherData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'stratos_telemetry.json'; a.click();
+}
+
+function downloadCSV() {
+  const rows = [['City', 'Temperature', 'Humidity', 'Wind Speed', 'Condition', 'Timestamp']];
+  weatherData.forEach(c => rows.push([c.city, c.temperature, c.humidity, c.wind_speed, c.condition, c.timestamp]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'stratos_telemetry.csv'; a.click();
+}
+
+// INIT
+fetchData();
+setInterval(fetchData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
